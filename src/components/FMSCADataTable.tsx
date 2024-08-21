@@ -315,10 +315,6 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
   }, [table.getFilteredRowModel().rows]);
 
   useEffect(() => {
-    handleSave();
-  }, [table.getFilteredRowModel().rows]);
-
-  useEffect(() => {
     const params = new URLSearchParams();
 
     tableFilters.forEach((filter) => {
@@ -344,6 +340,7 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
       "?" + params.toString()
     }`;
     window.history.pushState({}, "", newUrl);
+    handleSave();
   }, [tableFilters]);
 
   return (
@@ -358,6 +355,7 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
           handleAgree={() => {
             localStorage.removeItem("tableFilters");
             setTableFilters([]);
+            setOpenResetModal(false);
           }}
           handleClose={() => {
             setOpenResetModal(false);
