@@ -1,6 +1,5 @@
 import { BarChart, axisClasses } from "@mui/x-charts";
 import { FC } from "react";
-import { orange } from "@mui/material/colors";
 
 import {
   aggregateData,

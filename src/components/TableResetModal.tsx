@@ -14,18 +14,16 @@ interface TableSaveModalProps {
   open: boolean;
 }
 
-const TableSaveModal: FC<TableSaveModalProps> = ({
+const TableResetModal: FC<TableSaveModalProps> = ({
   handleClose,
   handleAgree,
   open,
 }) => {
   return (
     <Dialog open={open} onClose={handleClose}>
-      <DialogTitle>Save Filters</DialogTitle>
+      <DialogTitle>Reset Filters</DialogTitle>
       <DialogContent>
-        <DialogContentText>
-          Save your table current state before leaving?
-        </DialogContentText>
+        <DialogContentText>Reset your table current state?</DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose}>No</Button>
@@ -37,4 +35,4 @@ const TableSaveModal: FC<TableSaveModalProps> = ({
   );
 };
 
-export default TableSaveModal;
+export default TableResetModal;

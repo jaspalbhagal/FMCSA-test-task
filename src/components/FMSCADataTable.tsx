@@ -21,7 +21,7 @@ import { Cancel, Search, Share } from "@mui/icons-material";
 import { compareDates } from "../helpers/table";
 import { useTableData } from "../data-service/csv-data";
 import BackdropSpinner from "./BackdropSpinner";
-import TableSaveModal from "./TableSaveModal";
+import TableResetModal from "./TableResetModal";
 import PivotChart from "./PivotChart";
 import DataTableChart from "./DataTableChart";
 
@@ -38,7 +38,7 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [rowGrouping, setRowGrouping] = useState<null | string>("Month");
-  const [openSaveModal, setOpenSaveModal] = useState(false);
+  const [openResetModal, setOpenResetModal] = useState(false);
   const isFirstRender = useRef(true);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -200,8 +200,7 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
               aria-controls="date-reset-btn"
               aria-haspopup="true"
               onClick={() => {
-                localStorage.removeItem("tableFilters");
-                setTableFilters([]);
+                setOpenResetModal(true);
               }}
               variant="contained"
               sx={{ textTransform: "unset" }}
@@ -316,17 +315,8 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
   }, [table.getFilteredRowModel().rows]);
 
   useEffect(() => {
-    function openModal(event: BeforeUnloadEvent) {
-      event.preventDefault();
-      setOpenSaveModal(true);
-    }
-
-    window.addEventListener("beforeunload", openModal);
-
-    return () => {
-      window.removeEventListener("beforeunload", openModal);
-    };
-  }, []);
+    handleSave();
+  }, [table.getFilteredRowModel().rows]);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -363,13 +353,16 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
       <Typography variant="h3">FMSCA Data Table</Typography>
       <MaterialReactTable table={table} />
 
-      {openSaveModal && (
-        <TableSaveModal
-          handleAgree={handleSave}
-          handleClose={() => {
-            setOpenSaveModal(false);
+      {openResetModal && (
+        <TableResetModal
+          handleAgree={() => {
+            localStorage.removeItem("tableFilters");
+            setTableFilters([]);
           }}
-          open={openSaveModal}
+          handleClose={() => {
+            setOpenResetModal(false);
+          }}
+          open={openResetModal}
         />
       )}
 

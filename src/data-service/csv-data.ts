@@ -24,7 +24,7 @@ export const useTableData = () => {
           } else {
             // TODO: Remove slice after testing
             setParsedData(results.data);
-            const csvColumns = Object.keys(results.data[0])
+            const csvColumns = Object.keys(results.data[0] as any)
               .filter((key) => Object.keys(columnsMapper).includes(key))
               .map((key) => ({
                 field: key,
