@@ -5,7 +5,7 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import { FC, useCallback, useEffect, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DateTime } from "luxon";
 import {
   Box,
@@ -22,11 +22,6 @@ import { compareDates } from "../helpers/table";
 import { useTableData } from "../data-service/csv-data";
 import BackdropSpinner from "./BackdropSpinner";
 import TableSaveModal from "./TableSaveModal";
-import {
-  aggregateData,
-  collectEntityTypes,
-  transformToFormattedData,
-} from "../helpers/chart";
 import PivotChart from "./PivotChart";
 import DataTableChart from "./DataTableChart";
 
@@ -44,6 +39,7 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [rowGrouping, setRowGrouping] = useState<null | string>("Month");
   const [openSaveModal, setOpenSaveModal] = useState(false);
+  const isFirstRender = useRef(true);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -115,16 +111,18 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
         header: col.headerName,
         enableColumnOrdering: true,
         accessorKey: col.field,
-        type: ["created_dt", "data_source_modified_dt"].includes(col.field)
-          ? "date"
-          : "string",
-        ...(["created_dt", "data_source_modified_dt"].includes(col.field) && {
-          sortingFn: (rowA: any, rowB: any, columnId: any) => {
-            return compareDates(
-              rowA.getValue(columnId),
-              rowB.getValue(columnId)
-            );
-          },
+        muiEditTextFieldProps: () => ({
+          type: ["created_dt", "data_source_modified_dt"].includes(col.field)
+            ? "date"
+            : "text",
+          ...(["created_dt", "data_source_modified_dt"].includes(col.field) && {
+            sortingFn: (rowA: any, rowB: any, columnId: any) => {
+              return compareDates(
+                rowA.getValue(columnId),
+                rowB.getValue(columnId)
+              );
+            },
+          }),
         }),
       })),
     [parsedData]
@@ -187,14 +185,16 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
             borderBottom: "0.5px solid lightgray",
           }}
         >
-          <Stack direction="row">
-            {showSearch && <MRT_GlobalFilterTextField table={table} />}
-            <IconButton onClick={() => setShowSearch((prev) => !prev)}>
-              {showSearch ? <Cancel /> : <Search />}
-            </IconButton>
-          </Stack>
+          {!isPivot && (
+            <Stack direction="row">
+              {showSearch && <MRT_GlobalFilterTextField table={table} />}
+              <IconButton onClick={() => setShowSearch((prev) => !prev)}>
+                {showSearch ? <Cancel /> : <Search />}
+              </IconButton>
+            </Stack>
+          )}
 
-          <Box sx={{ display: "flex", gap: "0.5rem" }}>
+          <Box sx={{ display: "flex", gap: "0.5rem", ml: "auto" }}>
             {!isPivot && <MRT_ToggleFiltersButton table={table} />}
             <Button
               aria-controls="date-reset-btn"
@@ -279,15 +279,21 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
       },
       showColumnFilters: tableFilters.length ? true : false,
       grouping: ["dateMonth"],
+      columnFilters: tableFilters,
     },
     paginationDisplayMode: "pages",
     enableGrouping: isPivot,
     enableDensityToggle: false,
     enableFullScreenToggle: false,
     enableGlobalFilter: !isPivot,
+    // Editing
+    enableCellActions: !isPivot,
+    enableEditing: !isPivot,
+    enableRowActions: !isPivot,
+    editDisplayMode: "cell",
     // Columns
     enableColumnResizing: true,
-    enableColumnDragging: false,
+    enableColumnDragging: !isPivot,
     enableColumnOrdering: true,
     enableColumnFilters: !isPivot,
     state: {
@@ -304,12 +310,8 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
 
   const handleSave = useCallback(() => {
     const filterArray = table.getState().columnFilters || [];
-    localStorage.setItem("filters", JSON.stringify(filterArray));
+    localStorage.setItem("tableFilters", JSON.stringify(filterArray));
 
-    setOpenSaveModal(false);
-  }, [table.getFilteredRowModel().rows]);
-
-  useEffect(() => {
     setTableFilters(table.getState().columnFilters);
   }, [table.getFilteredRowModel().rows]);
 
@@ -325,6 +327,34 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
       window.removeEventListener("beforeunload", openModal);
     };
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    tableFilters.forEach((filter) => {
+      params.append(filter.id, filter.value);
+    });
+
+    // For first render
+    if (isFirstRender.current) {
+      const tableFiltersFromURL = [];
+      for (const [key, value] of new URL(window.location.href).searchParams) {
+        if (value) tableFiltersFromURL.push({ id: key, value });
+      }
+
+      if (tableFiltersFromURL.length > 0) {
+        setTableFilters(tableFiltersFromURL);
+      }
+      isFirstRender.current = false;
+
+      return;
+    }
+
+    const newUrl = `${window.location.pathname.replace(/\/$/, "")}${
+      "?" + params.toString()
+    }`;
+    window.history.pushState({}, "", newUrl);
+  }, [tableFilters]);
 
   return (
     <Box boxSizing="border-box">

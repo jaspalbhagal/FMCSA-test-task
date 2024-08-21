@@ -23,7 +23,7 @@ export const useTableData = () => {
             setErrors(results.errors.map((errorObj) => errorObj.message));
           } else {
             // TODO: Remove slice after testing
-            setParsedData(results.data.slice(0, 1000));
+            setParsedData(results.data);
             const csvColumns = Object.keys(results.data[0])
               .filter((key) => Object.keys(columnsMapper).includes(key))
               .map((key) => ({
