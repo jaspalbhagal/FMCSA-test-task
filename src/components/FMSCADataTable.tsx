@@ -5,7 +5,7 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import { FC, useMemo, useState } from "react";
+import { FC, useCallback, useEffect, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import {
   Box,
@@ -21,6 +21,14 @@ import { Cancel, Search, Share } from "@mui/icons-material";
 import { compareDates } from "../helpers/table";
 import { useTableData } from "../data-service/csv-data";
 import BackdropSpinner from "./BackdropSpinner";
+import TableSaveModal from "./TableSaveModal";
+import {
+  aggregateData,
+  collectEntityTypes,
+  transformToFormattedData,
+} from "../helpers/chart";
+import PivotChart from "./PivotChart";
+import DataTableChart from "./DataTableChart";
 
 interface FMSCADataTableProps {
   isPivot: boolean;
@@ -35,6 +43,7 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
   const [showSearch, setShowSearch] = useState<boolean>(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [rowGrouping, setRowGrouping] = useState<null | string>("Month");
+  const [openSaveModal, setOpenSaveModal] = useState(false);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -163,6 +172,10 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
       sx: { border: "2px solid gray", height: "100%" },
     },
     muiTableContainerProps: { sx: { height: "80%" } },
+    muiPaginationProps: {
+      shape: "rounded",
+      variant: "outlined",
+    },
     renderTopToolbar: ({ table }) => {
       return (
         <Box
@@ -269,11 +282,12 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
     },
     paginationDisplayMode: "pages",
     enableGrouping: isPivot,
-    enableColumnResizing: true,
     enableDensityToggle: false,
     enableFullScreenToggle: false,
-    enableColumnDragging: false,
     enableGlobalFilter: !isPivot,
+    // Columns
+    enableColumnResizing: true,
+    enableColumnDragging: false,
     enableColumnOrdering: true,
     enableColumnFilters: !isPivot,
     state: {
@@ -284,12 +298,58 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
     autoResetAll: true,
   });
 
+  const dataTableOriginalData = useMemo(() => {
+    return table.getFilteredRowModel().rows.map((item) => item.original);
+  }, [table.getFilteredRowModel().rows]);
+
+  const handleSave = useCallback(() => {
+    const filterArray = table.getState().columnFilters || [];
+    localStorage.setItem("filters", JSON.stringify(filterArray));
+
+    setOpenSaveModal(false);
+  }, [table.getFilteredRowModel().rows]);
+
+  useEffect(() => {
+    setTableFilters(table.getState().columnFilters);
+  }, [table.getFilteredRowModel().rows]);
+
+  useEffect(() => {
+    function openModal(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      setOpenSaveModal(true);
+    }
+
+    window.addEventListener("beforeunload", openModal);
+
+    return () => {
+      window.removeEventListener("beforeunload", openModal);
+    };
+  }, []);
+
   return (
     <Box boxSizing="border-box">
       <BackdropSpinner open={isLoading} message="Records are loading..." />
 
       <Typography variant="h3">FMSCA Data Table</Typography>
       <MaterialReactTable table={table} />
+
+      {openSaveModal && (
+        <TableSaveModal
+          handleAgree={handleSave}
+          handleClose={() => {
+            setOpenSaveModal(false);
+          }}
+          open={openSaveModal}
+        />
+      )}
+
+      <Box sx={{ mt: "1rem" }}>
+        {!isPivot ? (
+          <DataTableChart originalData={dataTableOriginalData} />
+        ) : (
+          <PivotChart grouping={rowGrouping} tableData={memoParsedData} />
+        )}
+      </Box>
     </Box>
   );
 };

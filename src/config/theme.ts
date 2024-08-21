@@ -14,6 +14,7 @@ export const theme = createTheme({
       styleOverrides: {
         root: {
           backgroundColor: orange[700],
+          color: "white",
           ":hover": {
             backgroundColor: orange[800],
           },
