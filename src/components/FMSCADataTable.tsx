@@ -5,7 +5,7 @@ import {
   MaterialReactTable,
   useMaterialReactTable,
 } from "material-react-table";
-import { useMemo, useState } from "react";
+import { FC, useMemo, useState } from "react";
 import { DateTime } from "luxon";
 import {
   Box,
@@ -16,13 +16,21 @@ import {
   Typography,
 } from "@mui/material";
 
-import { useTableData } from "../data-service/csv-data";
-import BackdropSpinner from "./BackdropSpinner";
 import { Cancel, Search, Share } from "@mui/icons-material";
 import { compareDates } from "../helpers/table";
 
-const FMSCADataTable = ({ isPivot }) => {
-  const { isLoading, parsedData, columns } = useTableData();
+interface FMSCADataTableProps {
+  isPivot: boolean;
+  isLoading: boolean;
+  parsedData: any;
+  columns: any;
+}
+
+const FMSCADataTable: FC<FMSCADataTableProps> = ({
+  isPivot,
+  parsedData,
+  columns,
+}) => {
   const [tableFilters, setTableFilters] = useState<any[]>(
     JSON.parse(localStorage.getItem("tableFilters") || "[]")
   );
@@ -117,7 +125,7 @@ const FMSCADataTable = ({ isPivot }) => {
 
   const memoParsedData = useMemo(
     () =>
-      parsedData.map((dataItem) => ({
+      parsedData.map((dataItem: any) => ({
         ...dataItem,
         created_dt: DateTime.fromJSDate(new Date(dataItem.created_dt)).toFormat(
           "dd LLL, yyyy hh:MM a"
@@ -282,7 +290,6 @@ const FMSCADataTable = ({ isPivot }) => {
 
   return (
     <Box boxSizing="border-box">
-      <BackdropSpinner open={isLoading} message="Records are loading..." />
       <MaterialReactTable table={table} />
     </Box>
   );
