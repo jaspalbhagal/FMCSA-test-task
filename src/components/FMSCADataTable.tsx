@@ -13,24 +13,22 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Stack,
   Typography,
 } from "@mui/material";
-
 import { Cancel, Search, Share } from "@mui/icons-material";
+
 import { compareDates } from "../helpers/table";
+import { useTableData } from "../data-service/csv-data";
+import BackdropSpinner from "./BackdropSpinner";
 
 interface FMSCADataTableProps {
   isPivot: boolean;
-  isLoading: boolean;
-  parsedData: any;
-  columns: any;
 }
 
-const FMSCADataTable: FC<FMSCADataTableProps> = ({
-  isPivot,
-  parsedData,
-  columns,
-}) => {
+const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
+  const { isLoading, parsedData, columns } = useTableData();
+
   const [tableFilters, setTableFilters] = useState<any[]>(
     JSON.parse(localStorage.getItem("tableFilters") || "[]")
   );
@@ -156,19 +154,6 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({
   const table = useMaterialReactTable({
     columns: parsedCols,
     data: memoParsedData,
-    enableGrouping: isPivot,
-    enableColumnResizing: true,
-    enableDensityToggle: false,
-    enableFullScreenToggle: false,
-    enableColumnDragging: false,
-    enableGlobalFilter: !isPivot,
-    enableColumnOrdering: true,
-    enableColumnFilters: !isPivot,
-    state: {
-      showGlobalFilter: !isPivot,
-      density: "compact",
-      columnFilters: tableFilters,
-    },
     muiTableBodyRowProps: {
       sx: {
         fontSize: 14,
@@ -189,87 +174,85 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({
             borderBottom: "0.5px solid lightgray",
           }}
         >
-          <Typography variant="h4">FMSCA Table</Typography>
+          <Stack direction="row">
+            {showSearch && <MRT_GlobalFilterTextField table={table} />}
+            <IconButton onClick={() => setShowSearch((prev) => !prev)}>
+              {showSearch ? <Cancel /> : <Search />}
+            </IconButton>
+          </Stack>
+
           <Box sx={{ display: "flex", gap: "0.5rem" }}>
-            <Box sx={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-              {showSearch && <MRT_GlobalFilterTextField table={table} />}
+            {!isPivot && <MRT_ToggleFiltersButton table={table} />}
+            <Button
+              aria-controls="date-reset-btn"
+              aria-haspopup="true"
+              onClick={() => {
+                localStorage.removeItem("tableFilters");
+                setTableFilters([]);
+              }}
+              variant="contained"
+              sx={{ textTransform: "unset" }}
+            >
+              Reset
+            </Button>
 
-              <IconButton onClick={() => setShowSearch((prev) => !prev)}>
-                {showSearch ? <Cancel /> : <Search />}
-              </IconButton>
-
-              {!isPivot && <MRT_ToggleFiltersButton table={table} />}
-              <Button
-                aria-controls="date-reset-btn"
-                aria-haspopup="true"
-                onClick={() => {
-                  localStorage.removeItem("tableFilters");
-                  setTableFilters([]);
-                }}
-                variant="contained"
-                sx={{ textTransform: "unset" }}
-              >
-                Reset
-              </Button>
-
-              {isPivot && (
-                <>
-                  <Button
-                    aria-controls="date-groupby-menu"
-                    aria-haspopup="true"
-                    onClick={handleClick}
-                    variant="contained"
-                    sx={{ textTransform: "unset" }}
-                  >
-                    Group By
-                  </Button>
-                  <Menu
-                    id="date-groupby-menu"
-                    anchorEl={anchorEl}
-                    keepMounted
-                    open={Boolean(anchorEl)}
-                    onClose={handleClose}
-                  >
-                    {["Week", "Month", "Year", "Clear"].map((key) => {
-                      return (
-                        <MenuItem
-                          key={key}
-                          selected={key === rowGrouping}
-                          onClick={() => handleGrouping(table, key)}
-                          sx={{
-                            "&.Mui-selected": {
-                              bgcolor: "#66b2ff",
-                              color: "white",
-                            },
-                          }}
-                        >
-                          {key}
-                        </MenuItem>
-                      );
-                    })}
-                  </Menu>
-                </>
-              )}
-              <Button
-                aria-controls="date-share-btn"
-                aria-haspopup="true"
-                onClick={() => {
-                  const currentUrl = window.location.href;
-                  navigator.clipboard
-                    .writeText(currentUrl)
-                    .then(() => {
-                      alert("URL copied to clipboard!");
-                    })
-                    .catch((err) => {
-                      console.error("Failed to copy URL: ", err);
-                    });
-                }}
-                variant="contained"
-                sx={{ textTransform: "unset" }}
-              >
-                <Share />
-              </Button>
-            </Box>
+            {isPivot && (
+              <>
+                <Button
+                  aria-controls="date-groupby-menu"
+                  aria-haspopup="true"
+                  onClick={handleClick}
+                  variant="contained"
+                  sx={{ textTransform: "unset" }}
+                >
+                  Group By
+                </Button>
+                <Menu
+                  id="date-groupby-menu"
+                  anchorEl={anchorEl}
+                  keepMounted
+                  open={Boolean(anchorEl)}
+                  onClose={handleClose}
+                >
+                  {["Week", "Month", "Year", "Clear"].map((key) => {
+                    return (
+                      <MenuItem
+                        key={key}
+                        selected={key === rowGrouping}
+                        onClick={() => handleGrouping(table, key)}
+                        sx={{
+                          "&.Mui-selected": {
+                            bgcolor: "#66b2ff",
+                            color: "white",
+                          },
+                        }}
+                      >
+                        {key}
+                      </MenuItem>
+                    );
+                  })}
+                </Menu>
+              </>
+            )}
+            <Button
+              aria-controls="date-share-btn"
+              aria-haspopup="true"
+              onClick={() => {
+                const currentUrl = window.location.href;
+                navigator.clipboard
+                  .writeText(currentUrl)
+                  .then(() => {
+                    alert("URL copied to clipboard!");
+                  })
+                  .catch((err) => {
+                    console.error("Failed to copy URL: ", err);
+                  });
+              }}
+              variant="contained"
+              sx={{ textTransform: "unset" }}
+            >
+              <Share />
+            </Button>
           </Box>
         </Box>
       );
@@ -284,12 +267,28 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({
       showColumnFilters: tableFilters.length ? true : false,
       grouping: ["dateMonth"],
     },
-
+    paginationDisplayMode: "pages",
+    enableGrouping: isPivot,
+    enableColumnResizing: true,
+    enableDensityToggle: false,
+    enableFullScreenToggle: false,
+    enableColumnDragging: false,
+    enableGlobalFilter: !isPivot,
+    enableColumnOrdering: true,
+    enableColumnFilters: !isPivot,
+    state: {
+      showGlobalFilter: !isPivot,
+      density: "compact",
+      columnFilters: tableFilters,
+    },
     autoResetAll: true,
   });
 
   return (
     <Box boxSizing="border-box">
+      <BackdropSpinner open={isLoading} message="Records are loading..." />
+
+      <Typography variant="h3">FMSCA Data Table</Typography>
       <MaterialReactTable table={table} />
     </Box>
   );
