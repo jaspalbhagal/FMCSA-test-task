@@ -1,13 +1,16 @@
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { usePapaParse } from "react-papaparse";
 
-export const getTableData = () => {
+import { columnsMapper } from "../helpers/table";
+
+export const useTableData = () => {
   const { readString } = usePapaParse();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [parsedData, setParsedData] = useState<any>([]);
+  const [columns, setColumns] = useState<any>([]);
   const [errors, setErrors] = useState<string[]>();
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       const csv = await fetch("/FMSCA_records.csv").then((res) => res.text());
       setIsLoading(true);
@@ -16,12 +19,23 @@ export const getTableData = () => {
         worker: true,
         header: true,
         complete: (results) => {
-          setIsLoading(false);
           if (results.errors.length > 0) {
             setErrors(results.errors.map((errorObj) => errorObj.message));
           } else {
-            setParsedData(results.data);
+            // TODO: Remove slice after testing
+            setParsedData(results.data.slice(0, 1000));
+            const csvColumns = Object.keys(results.data[0])
+              .filter((key) => Object.keys(columnsMapper).includes(key))
+              .map((key) => ({
+                field: key,
+                headerName: columnsMapper[key],
+                width: 150,
+                type: "string",
+              }));
+
+            setColumns(csvColumns);
           }
+          setIsLoading(false);
         },
       });
     };
@@ -29,5 +43,5 @@ export const getTableData = () => {
     fetchData();
   }, []);
 
-  return { isLoading, parsedData, errors };
+  return { isLoading, parsedData, errors, columns };
 };

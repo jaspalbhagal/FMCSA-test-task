@@ -1,18 +1,11 @@
-import "./App.css";
-import { getTableData } from "./data-service/csv-data";
+import FMSCADataTable from "./components/FMSCADataTable";
+import PageLayout from "./layout/PageLayout";
 
 function App() {
-  const { isLoading } = getTableData();
-
   return (
-    <>
-      <div></div>
-      <h1>Vite + React</h1>
-      {isLoading ? "...Loading" : "done"}
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <PageLayout>
+      <FMSCADataTable isPivot={false} />
+    </PageLayout>
   );
 }
 
