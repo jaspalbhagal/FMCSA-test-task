@@ -12,7 +12,9 @@ export const useTableData = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      const csv = await fetch("/FMSCA_records.csv").then((res) => res.text());
+      const csv = await fetch(
+        window.location.origin + "/FMSCA_records.csv"
+      ).then((res) => res.text());
       setIsLoading(true);
       readString(csv, {
         delimiter: ",",
@@ -23,7 +25,7 @@ export const useTableData = () => {
             setErrors(results.errors.map((errorObj) => errorObj.message));
           } else {
             // TODO: Remove slice after testing
-            setParsedData(results.data);
+            setParsedData(results.data.slice(0, 10000));
             const csvColumns = Object.keys(results.data[0] as any)
               .filter((key) => Object.keys(columnsMapper).includes(key))
               .map((key) => ({
