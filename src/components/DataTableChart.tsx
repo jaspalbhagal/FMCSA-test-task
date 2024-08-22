@@ -1,5 +1,5 @@
 import { BarChart, axisClasses } from "@mui/x-charts";
-import { FC } from "react";
+import { FC, useMemo } from "react";
 
 import {
   aggregateData,
@@ -8,11 +8,17 @@ import {
 } from "../helpers/chart";
 
 const DataTableChart: FC<any> = ({ originalData }) => {
-  const chartData = transformToFormattedData(
-    aggregateData(originalData),
-    collectEntityTypes(originalData)
+  const chartData = useMemo(
+    () =>
+      transformToFormattedData(
+        aggregateData(originalData),
+        collectEntityTypes(originalData)
+      ),
+    [originalData.length]
   );
 
+  console.log("__🚀 _ chartData:", chartData);
+  debugger;
   return (
     <BarChart
       dataset={chartData}

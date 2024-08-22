@@ -38,7 +38,7 @@ export const transformToFormattedData = (
     const entry: FormattedData = { month };
 
     allEntityTypes.forEach((type) => {
-      entry[type] = counts[type] || 0;
+      if (type) entry[type] = counts[type] || 0;
     });
 
     return entry;

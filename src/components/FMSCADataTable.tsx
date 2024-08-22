@@ -364,13 +364,15 @@ const FMSCADataTable: FC<FMSCADataTableProps> = ({ isPivot }) => {
         />
       )}
 
-      <Box sx={{ mt: "1rem" }}>
-        {!isPivot ? (
-          <DataTableChart originalData={dataTableOriginalData} />
-        ) : (
-          <PivotChart grouping={rowGrouping} tableData={memoParsedData} />
-        )}
-      </Box>
+      {parsedData.length > 0 && (
+        <Box sx={{ mt: "1rem" }}>
+          {!isPivot ? (
+            <DataTableChart originalData={dataTableOriginalData} />
+          ) : (
+            <PivotChart grouping={rowGrouping} tableData={memoParsedData} />
+          )}
+        </Box>
+      )}
     </Box>
   );
 };
